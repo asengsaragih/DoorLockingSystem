@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <MFRC522.h>
+#include <ESP8266WiFi.h>
 
 #define RST_PIN         0
 #define SS_PIN          2
@@ -9,6 +10,9 @@
 #define BUZZER D1 //Buzzer pin
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+char ssid[] = "Oren Basecamp"; // your network SSID (name)
+char pass[] = "kochengoren!@#"; // your network password
 
 void setup() {
   Serial.begin(9600);
@@ -30,6 +34,9 @@ void setup() {
 
   //buzzer
   pinMode(BUZZER, OUTPUT);
+
+  //wifi
+  WiFi.begin(ssid, pass);
 }
 
 void loop() {
