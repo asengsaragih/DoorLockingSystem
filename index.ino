@@ -33,9 +33,13 @@ void setup() {
 }
 
 void loop() {
-  // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
+  if (digitalRead(PUSH_BUTTON) == LOW) {
+    Serial.println("Pintu Terbuka Melalui Button");
+    showBuzzer();
+    openDoor();
+  }
 
+  if ( ! mfrc522.PICC_IsNewCardPresent()) {
     return;
   }
 
@@ -43,17 +47,11 @@ void loop() {
   if ( ! mfrc522.PICC_ReadCardSerial()) {
     return;
   } else {
-    Serial.println("cek bisa");
+    Serial.println("Pintu Terbuka Melalui RFID");
     showBuzzer();
-    showSelenoid();
+    openDoor();
   }
 
-  if(digitalRead(PUSH_BUTTON) == LOW) {
-    showBuzzer();
-    showSelenoid();
-    delay(200);
-    digitalWrite(PUSH_BUTTON, HIGH);
-  }
   // Dump debug info about the card; PICC_HaltA() is automatically called
   //	mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
   //  if (mfrc522.PICC_DumpToSerial(&(mfrc522.uid))== true) {
@@ -68,7 +66,7 @@ void showBuzzer() {
   digitalWrite(BUZZER, LOW);
 }
 
-void showSelenoid() {
+void openDoor() {
   digitalWrite(RELAY, LOW);
   delay(5000);
   digitalWrite(RELAY, HIGH);
