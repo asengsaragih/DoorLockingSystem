@@ -14,6 +14,15 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 char ssid[] = "Oren Basecamp"; // your network SSID (name)
 char pass[] = "kochengoren!@#"; // your network password
 
+
+//initialize RFID
+String KEY_ALDI = "8F 5A AB EC";
+String KEY_PANJI = "";
+String KEY_HANA = "";
+String KEY_RESTU = "";
+String KEY_IKHWAN = "";
+String KEY_SYAHRUR = "";
+
 void setup() {
   Serial.begin(9600);
   while (!Serial);
@@ -21,9 +30,7 @@ void setup() {
   mfrc522.PCD_Init();
   delay(4);
   mfrc522.PCD_DumpVersionToSerial();
-  Serial.println(F("Scan PICC to see UID, SAK, type, and data blocks..."));
-
-
+  
   //relay
   pinMode(RELAY, OUTPUT);
   digitalWrite(RELAY, HIGH);
@@ -50,26 +57,64 @@ void loop() {
     return;
   }
 
-  // Select one of the cards
+
   if ( ! mfrc522.PICC_ReadCardSerial()) {
     return;
   } else {
-    Serial.println("Pintu Terbuka Melalui RFID");
-    showBuzzer();
-    openDoor();
+    validateUser();
+  }
+}
+
+void validateUser() {
+  String content = "";
+  byte letter;
+  String message;
+
+  for (byte i = 0; i < mfrc522.uid.size; i++)
+  {
+    content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+    content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
 
-  // Dump debug info about the card; PICC_HaltA() is automatically called
-  //	mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
-  //  if (mfrc522.PICC_DumpToSerial(&(mfrc522.uid))== true) {
-  //    Serial.print("cek bisa");
-  //  }
-  //
+  content.toUpperCase();
+  
+  if (content.substring(1) == KEY_ALDI || content.substring(1) == KEY_PANJI || content.substring(1) == KEY_HANA || content.substring(1) == KEY_RESTU || content.substring(1) == KEY_IKHWAN || content.substring(1) == KEY_SYAHRUR)
+  {
+    if (content.substring(1) == KEY_ALDI) {
+      message = "Pintu Terbuka Melalui RFID KEY_ALDI";
+    } else if (content.substring(1) == KEY_PANJI) {
+      message = "Pintu Terbuka Melalui RFID KEY_PANJI";
+    } else if (content.substring(1) == KEY_HANA) {
+      message = "Pintu Terbuka Melalui RFID KEY_HANA";
+    } else if (content.substring(1) == KEY_RESTU) {
+      message = "Pintu Terbuka Melalui RFID KEY_RESTU";
+    } else if (content.substring(1) == KEY_IKHWAN) {
+      message = "Pintu Terbuka Melalui RFID KEY_IKHWAN";
+    } else if (content.substring(1) == KEY_SYAHRUR) {
+      message = "Pintu Terbuka Melalui RFID KEY_SYAHRUR";
+    }
+    
+    Serial.println(message);
+    showBuzzer();
+    openDoor();
+  } 
+  else 
+  {
+    message = "PINTU GAGAL DIBUKA RFID TIDAK TERDAFTAR";
+    Serial.println(message);
+    alertBuzzer();
+  }
 }
 
 void showBuzzer() {
   digitalWrite(BUZZER, HIGH);
   delay(200);
+  digitalWrite(BUZZER, LOW);
+}
+
+void alertBuzzer() {
+  digitalWrite(BUZZER, HIGH);
+  delay(3000);
   digitalWrite(BUZZER, LOW);
 }
 
