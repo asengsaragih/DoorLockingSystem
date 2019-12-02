@@ -1,19 +1,27 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
+#include <ArduinoJson.h>
+
 
 #define RST_PIN         0
 #define SS_PIN          2
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define RELAY D0 //relay pin
 #define PUSH_BUTTON D2 //button pin
 #define BUZZER D1 //Buzzer pin
 
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+//firebase
+#define FIREBASE_AUTH "MdtL40LDzv3rEQIHW2fuMmSxaZX8ViG3dkpEXEzK"
+#define FIREBASE_HOST "pets-a38fa.firebaseio.com"
+int isUnlock;
 
-char ssid[] = "Oren Basecamp"; // your network SSID (name)
-char pass[] = "kochengoren!@#"; // your network password
-
+//wifi
+char ssid[] = "jinjja"; // your network SSID (name)
+char pass[] = "12345678"; // your network password
 
 //initialize RFID
 String KEY_ALDI = "8F 5A AB EC";
@@ -30,7 +38,7 @@ void setup() {
   mfrc522.PCD_Init();
   delay(4);
   mfrc522.PCD_DumpVersionToSerial();
-  
+
   //relay
   pinMode(RELAY, OUTPUT);
   digitalWrite(RELAY, HIGH);
@@ -44,13 +52,36 @@ void setup() {
 
   //wifi
   WiFi.begin(ssid, pass);
+  Serial.print("connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("connected: ");
+  Serial.println(WiFi.localIP());
+
+  //firebase setup
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.setInt("UNLOCK", 0);
 }
 
 void loop() {
+//  Serial.println(Firebase.getString("UNLOCK"));
+//      if (Firebase.failed()) {
+//        Serial.print("setting number failed:");
+//        Serial.println(Firebase.error());
+//        firebaseReconnect();
+//        return;
+//      }
+
+  //    openDoorWifi();
+
   if (digitalRead(PUSH_BUTTON) == LOW) {
     Serial.println("Pintu Terbuka Melalui Button");
     showBuzzer();
     openDoor();
+//    Firebase.setInt("UNLOCK", 0);
   }
 
   if ( ! mfrc522.PICC_IsNewCardPresent()) {
@@ -77,7 +108,7 @@ void validateUser() {
   }
 
   content.toUpperCase();
-  
+
   if (content.substring(1) == KEY_ALDI || content.substring(1) == KEY_PANJI || content.substring(1) == KEY_HANA || content.substring(1) == KEY_RESTU || content.substring(1) == KEY_IKHWAN || content.substring(1) == KEY_SYAHRUR)
   {
     if (content.substring(1) == KEY_ALDI) {
@@ -93,17 +124,22 @@ void validateUser() {
     } else if (content.substring(1) == KEY_SYAHRUR) {
       message = "Pintu Terbuka Melalui RFID KEY_SYAHRUR";
     }
-    
+
     Serial.println(message);
     showBuzzer();
     openDoor();
-  } 
-  else 
+  }
+  else
   {
     message = "PINTU GAGAL DIBUKA RFID TIDAK TERDAFTAR";
     Serial.println(message);
     alertBuzzer();
   }
+}
+
+void firebaseReconnect() {
+  Serial.println("Trying to reconnect");
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 }
 
 void showBuzzer() {
@@ -122,4 +158,14 @@ void openDoor() {
   digitalWrite(RELAY, LOW);
   delay(5000);
   digitalWrite(RELAY, HIGH);
+}
+
+void openDoorWifi() {
+  isUnlock = Firebase.getString("UNLOCK").toInt();
+
+  if (isUnlock == 0) {
+    digitalWrite(RELAY, LOW);
+  } else if (isUnlock == 1) {
+    digitalWrite(RELAY, HIGH);
+  }
 }
