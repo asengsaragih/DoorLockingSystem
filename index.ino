@@ -1,8 +1,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <ESP8266WiFi.h>
-#include <FirebaseArduino.h>
-#include <ArduinoJson.h>
+#include "FirebaseESP8266.h"
 
 
 #define RST_PIN         0
@@ -14,14 +13,13 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 #define PUSH_BUTTON D2 //button pin
 #define BUZZER D1 //Buzzer pin
 
-//firebase
-#define FIREBASE_AUTH "MdtL40LDzv3rEQIHW2fuMmSxaZX8ViG3dkpEXEzK"
 #define FIREBASE_HOST "pets-a38fa.firebaseio.com"
-int isUnlock;
+#define FIREBASE_AUTH "aDIQgxXThLMlNjpBmxhpqVoVQ6aJCTPU7vcDNq6x"
+#define WIFI_SSID "Senja Oren"
+#define WIFI_PASSWORD "ganteng00"
 
-//wifi
-char ssid[] = "jinjja"; // your network SSID (name)
-char pass[] = "12345678"; // your network password
+//Define FirebaseESP8266 data object
+FirebaseData firebaseData;
 
 //initialize RFID
 String KEY_ALDI = "8F 5A AB EC";
@@ -32,7 +30,7 @@ String KEY_IKHWAN = "";
 String KEY_SYAHRUR = "";
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
   SPI.begin();
   mfrc522.PCD_Init();
@@ -50,23 +48,36 @@ void setup() {
   //buzzer
   pinMode(BUZZER, OUTPUT);
 
-  //wifi
-  WiFi.begin(ssid, pass);
-  Serial.print("connecting");
-  while (WiFi.status() != WL_CONNECTED) {
+  // wifi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
     Serial.print(".");
-    delay(500);
+    delay(300);
   }
   Serial.println();
-  Serial.print("connected: ");
+  Serial.print("Connected with IP: ");
   Serial.println(WiFi.localIP());
+  Serial.println();
 
-  //firebase setup
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.setInt("UNLOCK", 0);
+  Firebase.reconnectWiFi(true);
+
+  Firebase.setReadTimeout(firebaseData, 1000 * 60);
+  Firebase.setwriteSizeLimit(firebaseData, "tiny");
+
+  Firebase.setDouble(firebaseData, "UNLOCK", 0);
 }
 
 void loop() {
+//  
+//  Serial.println(Firebase.getString(firebaseData, "UNLOCK") + "\n");
+
+//  if(WiFi.status() != WL_CONNECTED)
+//{
+//  wifiConnect();
+//}
 //  Serial.println(Firebase.getString("UNLOCK"));
 //      if (Firebase.failed()) {
 //        Serial.print("setting number failed:");
@@ -81,7 +92,6 @@ void loop() {
     Serial.println("Pintu Terbuka Melalui Button");
     showBuzzer();
     openDoor();
-//    Firebase.setInt("UNLOCK", 0);
   }
 
   if ( ! mfrc522.PICC_IsNewCardPresent()) {
@@ -137,11 +147,6 @@ void validateUser() {
   }
 }
 
-void firebaseReconnect() {
-  Serial.println("Trying to reconnect");
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-}
-
 void showBuzzer() {
   digitalWrite(BUZZER, HIGH);
   delay(200);
@@ -158,14 +163,4 @@ void openDoor() {
   digitalWrite(RELAY, LOW);
   delay(5000);
   digitalWrite(RELAY, HIGH);
-}
-
-void openDoorWifi() {
-  isUnlock = Firebase.getString("UNLOCK").toInt();
-
-  if (isUnlock == 0) {
-    digitalWrite(RELAY, LOW);
-  } else if (isUnlock == 1) {
-    digitalWrite(RELAY, HIGH);
-  }
 }
