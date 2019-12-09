@@ -15,8 +15,8 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define FIREBASE_HOST "pets-a38fa.firebaseio.com"
 #define FIREBASE_AUTH "aDIQgxXThLMlNjpBmxhpqVoVQ6aJCTPU7vcDNq6x"
-#define WIFI_SSID "Senja Oren"
-#define WIFI_PASSWORD "ganteng00"
+#define WIFI_SSID "hanna"
+#define WIFI_PASSWORD "12345678"
 
 //Define FirebaseESP8266 data object
 FirebaseData firebaseData;
@@ -67,26 +67,38 @@ void setup() {
   Firebase.setReadTimeout(firebaseData, 1000 * 60);
   Firebase.setwriteSizeLimit(firebaseData, "tiny");
 
-  Firebase.setDouble(firebaseData, "UNLOCK", 0);
+  digitalWrite(BUZZER, HIGH);
+  delay(300);
+  digitalWrite(BUZZER, LOW);
 }
 
 void loop() {
-//  
-//  Serial.println(Firebase.getString(firebaseData, "UNLOCK") + "\n");
+  if (WiFi.status() == WL_CONNECTED) {
+    if (Firebase.getInt(firebaseData, "/STATUS/unlock")) {
+      int result = firebaseData.intData();
+      if (result == 1) {
+        digitalWrite(RELAY, LOW);
+      } else {
+        digitalWrite(RELAY, HIGH);
+      }
+    }
 
-//  if(WiFi.status() != WL_CONNECTED)
-//{
-//  wifiConnect();
-//}
-//  Serial.println(Firebase.getString("UNLOCK"));
-//      if (Firebase.failed()) {
-//        Serial.print("setting number failed:");
-//        Serial.println(Firebase.error());
-//        firebaseReconnect();
-//        return;
-//      }
+    if (digitalRead(PUSH_BUTTON) == LOW) {
+      Serial.println("Pintu Terbuka Melalui Button");
+      showBuzzer();
+      openDoor();
+    }
 
-  //    openDoorWifi();
+    if ( ! mfrc522.PICC_IsNewCardPresent()) {
+      return;
+    }
+
+    if ( ! mfrc522.PICC_ReadCardSerial()) {
+      return;
+    } else {
+      validateUser();
+    }
+  }
 
   if (digitalRead(PUSH_BUTTON) == LOW) {
     Serial.println("Pintu Terbuka Melalui Button");
@@ -97,7 +109,6 @@ void loop() {
   if ( ! mfrc522.PICC_IsNewCardPresent()) {
     return;
   }
-
 
   if ( ! mfrc522.PICC_ReadCardSerial()) {
     return;
