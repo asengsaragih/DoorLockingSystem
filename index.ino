@@ -23,11 +23,12 @@ FirebaseData firebaseData;
 
 //initialize RFID
 String KEY_ALDI = "8F 5A AB EC";
-String KEY_PANJI = "";
-String KEY_HANA = "";
-String KEY_RESTU = "";
-String KEY_IKHWAN = "";
-String KEY_SYAHRUR = "";
+String KEY_PANJI = "DC AD 80 43";
+String KEY_HANA = "0F 8A C3 1C";
+String KEY_RESTU = "07 19 C7 3C";
+String KEY_IKHWAN = "2F BA 30 87";
+String KEY_SYAHRUR = "D4 9B 4B 89";
+String KEY_DAFFA = "4F 65 89 A4";
 
 void setup() {
   Serial.begin(115200);
@@ -117,6 +118,29 @@ void loop() {
   }
 }
 
+boolean checkUser() {
+  String content = "";
+  byte letter;
+  String message;
+
+  for (byte i = 0; i < mfrc522.uid.size; i++)
+  {
+    content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+    content.concat(String(mfrc522.uid.uidByte[i], HEX));
+  }
+
+  content.toUpperCase();
+
+  if (content.substring(1) == KEY_ALDI || content.substring(1) == KEY_PANJI || content.substring(1) == KEY_HANA || content.substring(1) == KEY_RESTU || content.substring(1) == KEY_IKHWAN || content.substring(1) == KEY_SYAHRUR || content.substring(1) == KEY_DAFFA)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 void validateUser() {
   String content = "";
   byte letter;
@@ -130,7 +154,7 @@ void validateUser() {
 
   content.toUpperCase();
 
-  if (content.substring(1) == KEY_ALDI || content.substring(1) == KEY_PANJI || content.substring(1) == KEY_HANA || content.substring(1) == KEY_RESTU || content.substring(1) == KEY_IKHWAN || content.substring(1) == KEY_SYAHRUR)
+  if (content.substring(1) == KEY_ALDI || content.substring(1) == KEY_PANJI || content.substring(1) == KEY_HANA || content.substring(1) == KEY_RESTU || content.substring(1) == KEY_IKHWAN || content.substring(1) == KEY_SYAHRUR || content.substring(1) == KEY_DAFFA)
   {
     if (content.substring(1) == KEY_ALDI) {
       message = "Pintu Terbuka Melalui RFID KEY_ALDI";
@@ -144,6 +168,8 @@ void validateUser() {
       message = "Pintu Terbuka Melalui RFID KEY_IKHWAN";
     } else if (content.substring(1) == KEY_SYAHRUR) {
       message = "Pintu Terbuka Melalui RFID KEY_SYAHRUR";
+    } else if (content.substring(1) == KEY_DAFFA) {
+      message = "Pintu Terbuka Melalui RFID KEY_DAFFA";
     }
 
     Serial.println(message);
